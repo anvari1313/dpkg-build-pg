@@ -1,0 +1,115 @@
+---
+- name: Deploy dpkg-build-pg application
+  hosts: dpkg_servers
+  become: yes
+  vars:
+    app_name: dpkg-build-pg
+    service_name: dpkg-build-pg
+    config_dir: /etc/dpkg-build-pg
+    binary_path: /usr/bin/dpkg-build-pg
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - curl
+          - systemd
+        state: present
+        update_cache: yes
+
+    - name: Create temporary directory for package
+      tempfile:
+        state: directory
+        suffix: dpkg-build-pg
+      register: temp_dir
+
+    - name: Copy .deb package to server
+      copy:
+        src: "{{ deb_package_path }}"
+        dest: "{{ temp_dir.path }}/{{ app_name }}.deb"
+        mode: '0644'
+      when: deb_package_path is defined and deb_package_path != ""
+
+    - name: Download .deb package from URL
+      get_url:
+        url: "{{ deb_package_url }}"
+        dest: "{{ temp_dir.path }}/{{ app_name }}.deb"
+        mode: '0644'
+      when: deb_package_url is defined and deb_package_url != ""
+
+    - name: Install dpkg-build-pg package
+      apt:
+        deb: "{{ temp_dir.path }}/{{ app_name }}.deb"
+        state: present
+
+    - name: Ensure configuration directory exists
+      file:
+        path: "{{ config_dir }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Deploy custom configuration if provided
+      template:
+        src: "{{ custom_config_template }}"
+        dest: "{{ config_dir }}/config.yaml"
+        owner: www-data
+        group: www-data
+        mode: '0644'
+      when: custom_config_template is defined and custom_config_template != ""
+      notify: reload dpkg-build-pg
+
+    - name: Update configuration values
+      lineinfile:
+        path: "{{ config_dir }}/config.yaml"
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        owner: www-data
+        group: www-data
+        mode: '0644'
+      loop:
+        - { regexp: '^  port:', line: '  port: {{ server_port }}' }
+        - { regexp: '^  host:', line: '  host: "{{ server_host }}"' }
+        - { regexp: '^message:', line: 'message: "{{ server_message }}"' }
+      when: update_config | default(true)
+      notify: reload dpkg-build-pg
+
+    - name: Enable and start dpkg-build-pg service
+      systemd:
+        name: "{{ service_name }}"
+        enabled: yes
+        state: started
+        daemon_reload: yes
+
+    - name: Wait for service to be ready
+      wait_for:
+        port: "{{ server_port }}"
+        host: "{{ server_host }}"
+        delay: 2
+        timeout: 30
+        state: started
+
+    - name: Verify service is responding
+      uri:
+        url: "http://{{ server_host }}:{{ server_port }}/"
+        return_content: yes
+        status_code: 200
+      register: response
+      retries: 3
+      delay: 2
+
+    - name: Display service response
+      debug:
+        msg: "Service is responding with: {{ response.content }}"
+
+    - name: Cleanup temporary directory
+      file:
+        path: "{{ temp_dir.path }}"
+        state: absent
+
+  handlers:
+    - name: reload dpkg-build-pg
+      systemd:
+        name: "{{ service_name }}"
+        state: reloaded

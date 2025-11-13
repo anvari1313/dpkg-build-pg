@@ -1,0 +1,79 @@
+---
+- name: Manage dpkg-build-pg service
+  hosts: dpkg_servers
+  become: yes
+  vars:
+    service_name: dpkg-build-pg
+    # Valid actions: start, stop, restart, reload, status
+    action: "{{ service_action | default('status') }}"
+
+  tasks:
+    - name: Validate action
+      assert:
+        that:
+          - action in ['start', 'stop', 'restart', 'reload', 'status', 'enable', 'disable']
+        fail_msg: "Invalid action '{{ action }}'. Must be one of: start, stop, restart, reload, status, enable, disable"
+
+    - name: Perform service action - {{ action }}
+      systemd:
+        name: "{{ service_name }}"
+        state: "{{ action }}"
+      when: action in ['start', 'stop', 'restart', 'reloaded']
+      register: service_result
+
+    - name: Enable service
+      systemd:
+        name: "{{ service_name }}"
+        enabled: yes
+      when: action == 'enable'
+
+    - name: Disable service
+      systemd:
+        name: "{{ service_name }}"
+        enabled: no
+      when: action == 'disable'
+
+    - name: Get service status
+      systemd:
+        name: "{{ service_name }}"
+      register: service_status
+      when: action == 'status'
+
+    - name: Display service status
+      debug:
+        msg:
+          - "Service: {{ service_name }}"
+          - "Active: {{ service_status.status.ActiveState | default('unknown') }}"
+          - "Running: {{ service_status.status.SubState | default('unknown') }}"
+          - "Enabled: {{ service_status.status.UnitFileState | default('unknown') }}"
+      when: action == 'status' and service_status is defined
+
+    - name: Get recent service logs
+      shell: journalctl -u {{ service_name }} -n 20 --no-pager
+      register: service_logs
+      changed_when: false
+      when: action == 'status'
+
+    - name: Display recent logs
+      debug:
+        msg: "{{ service_logs.stdout_lines }}"
+      when: action == 'status' and service_logs is defined
+
+    - name: Verify service is responding (for start/restart/reload)
+      uri:
+        url: "http://localhost:8080/"
+        return_content: yes
+        status_code: 200
+      register: response
+      retries: 3
+      delay: 2
+      when: action in ['start', 'restart', 'reloaded']
+      ignore_errors: yes
+
+    - name: Display service response
+      debug:
+        msg: "Service is responding with: {{ response.content }}"
+      when:
+        - action in ['start', 'restart', 'reloaded']
+        - response is defined
+        - response.status == 200

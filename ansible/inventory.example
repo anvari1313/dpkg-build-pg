@@ -1,0 +1,33 @@
+# Ansible Inventory Example for dpkg-build-pg deployment
+# Copy this file to 'inventory' and customize for your environment
+
+[dpkg_servers]
+# Production servers
+prod-server-1 ansible_host=192.168.1.10 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
+prod-server-2 ansible_host=192.168.1.11 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+# Staging servers
+[dpkg_servers:staging]
+staging-server ansible_host=192.168.1.20 ansible_user=ubuntu
+
+# Development servers
+[dpkg_servers:dev]
+dev-server ansible_host=192.168.1.30 ansible_user=ubuntu
+
+# Group variables can also be defined inline
+[dpkg_servers:vars]
+ansible_python_interpreter=/usr/bin/python3
+
+# Alternative format using YAML (save as inventory.yml)
+# all:
+#   children:
+#     dpkg_servers:
+#       hosts:
+#         prod-server-1:
+#           ansible_host: 192.168.1.10
+#           ansible_user: ubuntu
+#         prod-server-2:
+#           ansible_host: 192.168.1.11
+#           ansible_user: ubuntu
+#       vars:
+#         ansible_python_interpreter: /usr/bin/python3

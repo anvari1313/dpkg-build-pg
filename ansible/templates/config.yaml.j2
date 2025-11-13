@@ -1,0 +1,11 @@
+# Configuration file for dpkg-build-pg HTTP server
+# This file is managed by Ansible - DO NOT EDIT MANUALLY
+
+server:
+  # Port to listen on
+  port: {{ server_port }}
+  # Host to bind to (use 0.0.0.0 for all interfaces)
+  host: "{{ server_host }}"
+
+# Message to respond with
+message: "{{ server_message }}"

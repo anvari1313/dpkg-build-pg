@@ -43,3 +43,8 @@ release-artifacts/
 *.swp
 *.swo
 *~
+
+# Ansible
+ansible/inventory
+ansible/group_vars/*/vault.yml
+ansible/*.retry
