@@ -5,8 +5,6 @@
   vars:
     app_name: dpkg-build-pg
     service_name: dpkg-build-pg
-    config_dir: /etc/dpkg-build-pg
-    binary_path: /usr/bin/dpkg-build-pg
 
   tasks:
     - name: Install required packages
@@ -42,57 +40,30 @@
         deb: "{{ temp_dir.path }}/{{ app_name }}.deb"
         state: present
 
-    - name: Ensure configuration directory exists
-      file:
-        path: "{{ config_dir }}"
-        state: directory
-        owner: www-data
-        group: www-data
-        mode: '0755'
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
 
-    - name: Deploy custom configuration if provided
-      template:
-        src: "{{ custom_config_template }}"
-        dest: "{{ config_dir }}/config.yaml"
-        owner: www-data
-        group: www-data
-        mode: '0644'
-      when: custom_config_template is defined and custom_config_template != ""
-      notify: reload dpkg-build-pg
-
-    - name: Update configuration values
-      lineinfile:
-        path: "{{ config_dir }}/config.yaml"
-        regexp: "{{ item.regexp }}"
-        line: "{{ item.line }}"
-        owner: www-data
-        group: www-data
-        mode: '0644'
-      loop:
-        - { regexp: '^  port:', line: '  port: {{ server_port }}' }
-        - { regexp: '^  host:', line: '  host: "{{ server_host }}"' }
-        - { regexp: '^message:', line: 'message: "{{ server_message }}"' }
-      when: update_config | default(true)
-      notify: reload dpkg-build-pg
-
-    - name: Enable and start dpkg-build-pg service
+    - name: Enable dpkg-build-pg service
       systemd:
         name: "{{ service_name }}"
         enabled: yes
-        state: started
-        daemon_reload: yes
+
+    - name: Restart dpkg-build-pg service
+      systemd:
+        name: "{{ service_name }}"
+        state: restarted
 
     - name: Wait for service to be ready
       wait_for:
-        port: "{{ server_port }}"
-        host: "{{ server_host }}"
+        port: 8080
         delay: 2
         timeout: 30
         state: started
 
     - name: Verify service is responding
       uri:
-        url: "http://{{ server_host }}:{{ server_port }}/"
+        url: "http://localhost:8080/"
         return_content: yes
         status_code: 200
       register: response
@@ -103,13 +74,19 @@
       debug:
         msg: "Service is responding with: {{ response.content }}"
 
+    - name: Display service status
+      systemd:
+        name: "{{ service_name }}"
+      register: service_status
+
+    - name: Show deployment result
+      debug:
+        msg:
+          - "Deployment completed successfully!"
+          - "Service: {{ service_name }}"
+          - "Status: {{ service_status.status.ActiveState }}"
+
     - name: Cleanup temporary directory
       file:
         path: "{{ temp_dir.path }}"
         state: absent
-
-  handlers:
-    - name: reload dpkg-build-pg
-      systemd:
-        name: "{{ service_name }}"
-        state: reloaded

@@ -2,6 +2,8 @@
 
 This directory contains Ansible playbooks for deploying the dpkg-build-pg application to Debian-based servers.
 
+**Important**: This playbook only deploys the .deb package. Configuration is managed through the `config.production.yaml` file that is included in the .deb package itself. To change the configuration, you must update `config.production.yaml`, rebuild the .deb package, and redeploy.
+
 ## Prerequisites
 
 - Ansible 2.9 or higher installed on your control machine
@@ -46,18 +48,13 @@ Edit `inventory` and add your server details:
 your-server ansible_host=192.168.1.10 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
 ```
 
-### 3. Configure Variables
+### 3. Configure Package Location
 
-Edit `group_vars/all.yml` to set your desired configuration:
+Edit `group_vars/all.yml` to specify your .deb package location:
 
 ```yaml
 # Path to your .deb package
 deb_package_path: "../dpkg-build-pg_1.0.0_amd64.deb"
-
-# Server settings
-server_port: 8080
-server_host: "0.0.0.0"
-server_message: "Hello from dpkg-build-pg server!"
 ```
 
 ### 4. Test Connection
@@ -145,27 +142,21 @@ Set in `group_vars/all.yml`:
 deb_package_url: "https://github.com/your-org/dpkg-build-pg/releases/download/v1.0.0/dpkg-build-pg_1.0.0_amd64.deb"
 ```
 
-### Option 3: Use Custom Config Template
+## Configuration Management
 
-If you want full control over the configuration file:
+Configuration is embedded in the .deb package via `config.production.yaml`. To update the configuration:
 
-1. Uncomment the `custom_config_template` variable in `group_vars/all.yml`:
-   ```yaml
-   custom_config_template: "templates/config.yaml.j2"
-   ```
+1. Edit `config.production.yaml` in your project root
+2. Build a new .deb package
+3. Deploy the new package using Ansible
 
-2. The playbook will use the Jinja2 template instead of updating the existing config file
+The application will automatically use `/etc/dpkg-build-pg/config.production.yaml` if it exists.
 
 ## Advanced Usage
 
-### Override Variables at Runtime
+### Deploy Specific Package Version
 
 ```bash
-# Override specific variables
-ansible-playbook -i inventory playbook.yml \
-  -e "server_port=9090" \
-  -e "server_message='Custom message'"
-
 # Deploy to specific hosts
 ansible-playbook -i inventory playbook.yml --limit prod-server-1
 
@@ -217,21 +208,26 @@ The playbook performs the following tasks:
 1. **Install Dependencies** - Ensures required packages are installed
 2. **Create Temporary Directory** - For staging the .deb package
 3. **Copy/Download Package** - Gets the .deb file to the server
-4. **Install Package** - Installs dpkg-build-pg using apt
-5. **Configure Application** - Updates configuration settings
-6. **Enable Service** - Enables and starts the systemd service
-7. **Verify Deployment** - Checks that the service is responding
-8. **Cleanup** - Removes temporary files
+4. **Install Package** - Installs dpkg-build-pg using apt (includes config.production.yaml)
+5. **Reload Systemd** - Reloads systemd daemon
+6. **Enable Service** - Enables the service to start on boot
+7. **Restart Service** - Restarts the service with new configuration
+8. **Verify Deployment** - Checks that the service is responding
+9. **Cleanup** - Removes temporary files
 
-## Reload Configuration
+## Reload Configuration (After Manual Config Changes)
 
-After the application is deployed, you can reload configuration without restarting:
+If you manually edit the config file on the server and want to reload without redeploying:
 
 ```bash
+# Using make
+make reload
+
+# Or directly
 ansible dpkg_servers -i inventory -b -m systemd -a "name=dpkg-build-pg state=reloaded"
 ```
 
-Or use the systemctl command directly on the server:
+Or use systemctl directly on the server:
 
 ```bash
 sudo systemctl reload dpkg-build-pg
@@ -294,10 +290,8 @@ ansible/
 ├── manage.yml                   # Service management playbook
 ├── inventory.example            # Example inventory file
 ├── inventory                    # Your actual inventory (not in git)
-├── group_vars/
-│   └── all.yml                  # Default variables
-└── templates/
-    └── config.yaml.j2          # Configuration template (optional)
+└── group_vars/
+    └── all.yml                  # Default variables
 ```
 
 ## Best Practices

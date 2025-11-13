@@ -88,8 +88,9 @@ func setupSignalHandling() {
 func loadConfig() error {
 	// Try multiple config file locations
 	configPaths := []string{
-		"/etc/dpkg-build-pg/config.yaml", // System-wide config
-		"./config.yaml",                  // Local config for development
+		"/etc/dpkg-build-pg/config.production.yaml", // Production config (highest priority)
+		"/etc/dpkg-build-pg/config.yaml",            // System-wide config
+		"./config.yaml",                             // Local config for development
 	}
 
 	var configData []byte

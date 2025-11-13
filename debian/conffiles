@@ -1,1 +1,2 @@
 /etc/dpkg-build-pg/config.yaml
+/etc/dpkg-build-pg/config.production.yaml
