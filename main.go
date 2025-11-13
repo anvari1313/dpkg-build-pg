@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime"
 
 	"gopkg.in/yaml.v3"
 )
@@ -27,6 +28,7 @@ func init() {
 	if buildTime == "" {
 		buildTime = "unknown"
 	}
+	log.Printf("Go Version: %s", runtime.Version())
 	log.Printf("Build Time: %s", buildTime)
 }
 
