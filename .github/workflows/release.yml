@@ -1,0 +1,91 @@
+name: Release Debian Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Install Debian packaging tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y dpkg-dev debhelper devscripts build-essential
+
+    - name: Build Debian package
+      run: |
+        dpkg-buildpackage -us -uc -b
+
+    - name: Get package info
+      id: package_info
+      run: |
+        DEB_FILE=$(ls ../*.deb | head -1)
+        DEB_NAME=$(basename "$DEB_FILE")
+        VERSION=$(dpkg-deb -f "$DEB_FILE" Version)
+        ARCH=$(dpkg-deb -f "$DEB_FILE" Architecture)
+        echo "deb_file=$DEB_FILE" >> $GITHUB_OUTPUT
+        echo "deb_name=$DEB_NAME" >> $GITHUB_OUTPUT
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "arch=$ARCH" >> $GITHUB_OUTPUT
+
+    - name: Generate checksums
+      run: |
+        cd ..
+        sha256sum *.deb > checksums.txt
+        cat checksums.txt
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ../*.deb
+          ../checksums.txt
+        body: |
+          ## Debian Package Release
+
+          **Version:** ${{ steps.package_info.outputs.version }}
+          **Architecture:** ${{ steps.package_info.outputs.arch }}
+
+          ### Installation
+
+          Download the `.deb` file and install it:
+
+          ```bash
+          sudo dpkg -i ${{ steps.package_info.outputs.deb_name }}
+          ```
+
+          ### Usage
+
+          After installation, the service will start automatically. You can check its status:
+
+          ```bash
+          sudo systemctl status dpkg-build-pg
+          ```
+
+          Test the server:
+
+          ```bash
+          curl http://localhost:8080
+          ```
+
+          ### Checksums
+
+          See `checksums.txt` for SHA256 checksums of the package.
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
