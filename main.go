@@ -5,7 +5,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"runtime"
+	"sync"
+	"syscall"
 
 	"gopkg.in/yaml.v3"
 )
@@ -19,10 +22,11 @@ type Config struct {
 	Message string `yaml:"message"`
 }
 
-var config Config
-
-// buildTime is set at compile time via -ldflags
-var buildTime string
+var (
+	config    Config
+	configMu  sync.RWMutex
+	buildTime string // set at compile time via -ldflags
+)
 
 func init() {
 	if buildTime == "" {
@@ -38,17 +42,46 @@ func main() {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
+	// Set up signal handling for config reload
+	setupSignalHandling()
+
 	// Register the handler for the root path
 	http.HandleFunc("/", handleRoot)
 
 	// Start the server
+	configMu.RLock()
 	addr := fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port)
+	message := config.Message
+	configMu.RUnlock()
+
 	log.Printf("Starting HTTP server on http://%s\n", addr)
-	log.Printf("Response message: %s\n", config.Message)
+	log.Printf("Response message: %s\n", message)
 
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
+}
+
+// setupSignalHandling sets up signal handlers for graceful reload
+func setupSignalHandling() {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGHUP)
+
+	go func() {
+		for {
+			sig := <-sigs
+			if sig == syscall.SIGHUP {
+				log.Println("Received SIGHUP, reloading configuration...")
+				if err := loadConfig(); err != nil {
+					log.Printf("Failed to reload configuration: %v", err)
+				} else {
+					configMu.RLock()
+					log.Printf("Configuration reloaded successfully. New message: %s", config.Message)
+					configMu.RUnlock()
+				}
+			}
+		}
+	}()
 }
 
 // loadConfig loads configuration from file
@@ -77,26 +110,35 @@ func loadConfig() error {
 
 	log.Printf("Loading config from: %s", usedPath)
 
-	// Parse YAML
-	if err := yaml.Unmarshal(configData, &config); err != nil {
+	// Parse YAML into temporary config
+	var newConfig Config
+	if err := yaml.Unmarshal(configData, &newConfig); err != nil {
 		return fmt.Errorf("failed to parse config file: %v", err)
 	}
 
 	// Set defaults if not specified
-	if config.Server.Port == 0 {
-		config.Server.Port = 8080
+	if newConfig.Server.Port == 0 {
+		newConfig.Server.Port = 8080
 	}
-	if config.Server.Host == "" {
-		config.Server.Host = "0.0.0.0"
+	if newConfig.Server.Host == "" {
+		newConfig.Server.Host = "0.0.0.0"
 	}
-	if config.Message == "" {
-		config.Message = "Hello from dpkg-build-pg server!"
+	if newConfig.Message == "" {
+		newConfig.Message = "Hello from dpkg-build-pg server!"
 	}
+
+	// Update global config with lock
+	configMu.Lock()
+	config = newConfig
+	configMu.Unlock()
 
 	return nil
 }
 
 // handleRoot is the handler function that responds with a string from config
 func handleRoot(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, config.Message)
+	configMu.RLock()
+	message := config.Message
+	configMu.RUnlock()
+	fmt.Fprintf(w, message)
 }
