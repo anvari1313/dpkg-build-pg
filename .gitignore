@@ -33,6 +33,10 @@ debian/*.substvars
 *.tar.gz
 *.dsc
 
+# CI/CD artifacts
+artifacts/
+release-artifacts/
+
 # IDE
 .idea/
 .vscode/

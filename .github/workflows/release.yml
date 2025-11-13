@@ -35,10 +35,16 @@ jobs:
       run: |
         dpkg-buildpackage -us -uc -b
 
+    - name: Collect release artifacts
+      run: |
+        mkdir -p release-artifacts
+        cp ../*.deb release-artifacts/
+        ls -lh release-artifacts/
+
     - name: Get package info
       id: package_info
       run: |
-        DEB_FILE=$(ls ../*.deb | head -1)
+        DEB_FILE=$(ls release-artifacts/*.deb | head -1)
         DEB_NAME=$(basename "$DEB_FILE")
         VERSION=$(dpkg-deb -f "$DEB_FILE" Version)
         ARCH=$(dpkg-deb -f "$DEB_FILE" Architecture)
@@ -49,7 +55,7 @@ jobs:
 
     - name: Generate checksums
       run: |
-        cd ..
+        cd release-artifacts
         sha256sum *.deb > checksums.txt
         cat checksums.txt
 
@@ -57,8 +63,8 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          ../*.deb
-          ../checksums.txt
+          release-artifacts/*.deb
+          release-artifacts/checksums.txt
         body: |
           ## Debian Package Release
 
