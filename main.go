@@ -20,6 +20,16 @@ type Config struct {
 
 var config Config
 
+// buildTime is set at compile time via -ldflags
+var buildTime string
+
+func init() {
+	if buildTime == "" {
+		buildTime = "unknown"
+	}
+	log.Printf("Build Time: %s", buildTime)
+}
+
 func main() {
 	// Load configuration
 	if err := loadConfig(); err != nil {

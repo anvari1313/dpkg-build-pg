@@ -12,7 +12,12 @@ The project demonstrates how to package Go applications for Debian-based systems
 
 ### Building
 ```bash
+# Simple build
 go build -o dpkg-build-pg .
+
+# Build with compile date/time injection
+BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+go build -o dpkg-build-pg -ldflags="-s -w -X 'main.buildTime=${BUILD_TIME}'" .
 ```
 
 ### Running
