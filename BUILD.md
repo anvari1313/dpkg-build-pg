@@ -115,7 +115,7 @@ sudo apt-get purge dpkg-build-pg
 
 The package installs:
 - Binary: `/usr/bin/dpkg-build-pg`
-- Systemd service: `/lib/systemd/system/dpkg-build-pg.service`
+- Systemd service: `/usr/lib/systemd/system/dpkg-build-pg.service`
 
 ## Troubleshooting
 
