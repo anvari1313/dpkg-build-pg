@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    purge|remove)
+        # Disable the service
+        systemctl disable dpkg-build-pg.service || true
+        # Reload systemd daemon
+        systemctl daemon-reload || true
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	go build -o dpkg-build-pg .
+
+override_dh_auto_install:
+	install -D -m 0755 dpkg-build-pg debian/dpkg-build-pg/usr/bin/dpkg-build-pg
+	install -D -m 0644 debian/dpkg-build-pg.service debian/dpkg-build-pg/lib/systemd/system/dpkg-build-pg.service
+
+override_dh_auto_test:
+	# Skip tests for now
+
+override_dh_auto_clean:
+	rm -f dpkg-build-pg
+	go clean

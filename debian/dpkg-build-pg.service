@@ -1,0 +1,14 @@
+[Unit]
+Description=DPKG Build PG HTTP Server
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+ExecStart=/usr/bin/dpkg-build-pg
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

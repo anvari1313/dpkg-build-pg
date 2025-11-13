@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    remove)
+        # Stop the service
+        systemctl stop dpkg-build-pg.service || true
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

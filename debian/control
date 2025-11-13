@@ -1,0 +1,14 @@
+Source: dpkg-build-pg
+Section: net
+Priority: optional
+Maintainer: Ahmad Anvari <ahmad@example.com>
+Build-Depends: debhelper (>= 10), golang-go (>= 1.18)
+Standards-Version: 4.5.0
+Homepage: https://github.com/anvari1313/dpkg-build-pg
+
+Package: dpkg-build-pg
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Simple HTTP server built with Go
+ A simple HTTP server application that responds with a string message.
+ This package includes the server binary and a systemd service unit.

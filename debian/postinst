@@ -1,0 +1,16 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        # Reload systemd daemon
+        systemctl daemon-reload || true
+        # Enable and start the service
+        systemctl enable dpkg-build-pg.service || true
+        systemctl start dpkg-build-pg.service || true
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

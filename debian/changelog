@@ -1,0 +1,6 @@
+dpkg-build-pg (1.0.0) stable; urgency=medium
+
+  * Initial release
+  * Simple HTTP server with single handler
+
+ -- Ahmad Anvari <ahmad@example.com>  Thu, 13 Nov 2025 00:00:00 +0000

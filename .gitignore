@@ -1,0 +1,41 @@
+# Binaries
+dpkg-build-pg
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# Debian build artifacts
+debian/dpkg-build-pg/
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/files
+debian/*.log
+debian/*.substvars
+
+# Debian packages
+*.deb
+*.changes
+*.buildinfo
+*.tar.xz
+*.tar.gz
+*.dsc
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
