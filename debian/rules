@@ -4,7 +4,8 @@
 	dh $@
 
 override_dh_auto_build:
-	go build -o dpkg-build-pg .
+	# Binary is pre-built, skip compilation
+	@echo "Using pre-built binary"
 
 override_dh_auto_install:
 	install -D -m 0755 dpkg-build-pg debian/dpkg-build-pg/usr/bin/dpkg-build-pg
@@ -14,5 +15,4 @@ override_dh_auto_test:
 	# Skip tests for now
 
 override_dh_auto_clean:
-	rm -f dpkg-build-pg
-	go clean
+	# Binary is pre-built, nothing to clean

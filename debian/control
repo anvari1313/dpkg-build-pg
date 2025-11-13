@@ -2,7 +2,7 @@ Source: dpkg-build-pg
 Section: net
 Priority: optional
 Maintainer: Ahmad Anvari <ahmad@example.com>
-Build-Depends: debhelper (>= 10), golang-go (>= 1.18)
+Build-Depends: debhelper (>= 10)
 Standards-Version: 4.5.0
 Homepage: https://github.com/anvari1313/dpkg-build-pg
 

@@ -22,12 +22,22 @@ Simply run the provided build script:
 ```
 
 This will:
-1. Check for required tools
+1. Check for required tools (Go and dpkg-buildpackage)
 2. Clean previous builds
-3. Build the Debian package
-4. Display installation instructions
+3. Compile the Go binary with optimizations
+4. Build the Debian package using the pre-built binary
+5. Display installation instructions
 
 ### Option 2: Manual build
+
+First, compile the Go binary:
+
+```bash
+go build -o dpkg-build-pg -ldflags="-s -w" .
+chmod +x dpkg-build-pg
+```
+
+Then build the package:
 
 ```bash
 dpkg-buildpackage -us -uc -b
@@ -128,6 +138,20 @@ The service runs as the `www-data` user. Ensure this user exists:
 ```bash
 id www-data
 ```
+
+## Build Process
+
+The build follows a two-stage process:
+
+1. **Stage 1 - Compile Go Binary**: The Go source code is compiled into a static binary with optimizations (`-ldflags="-s -w"` strips debug info and symbol table to reduce size).
+
+2. **Stage 2 - Package Binary**: The pre-compiled binary is packaged into a `.deb` file along with the systemd service configuration.
+
+This approach has several advantages:
+- Faster package builds (no recompilation needed)
+- Consistent binaries across different package builds
+- Smaller package build dependencies (only needs `debhelper`, not `golang-go`)
+- Better control over Go compilation flags
 
 ## Development
 
