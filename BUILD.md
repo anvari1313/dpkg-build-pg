@@ -116,6 +116,43 @@ sudo apt-get purge dpkg-build-pg
 The package installs:
 - Binary: `/usr/bin/dpkg-build-pg`
 - Systemd service: `/usr/lib/systemd/system/dpkg-build-pg.service`
+- Configuration file: `/etc/dpkg-build-pg/config.yaml`
+
+## Configuration
+
+The application reads its configuration from `/etc/dpkg-build-pg/config.yaml`.
+
+### Configuration Options
+
+```yaml
+server:
+  # Port to listen on (default: 8080)
+  port: 8080
+  # Host to bind to (default: 0.0.0.0)
+  host: "0.0.0.0"
+
+# Message to respond with
+message: "Hello from dpkg-build-pg server!"
+```
+
+### Changing the Configuration
+
+1. Edit the config file:
+   ```bash
+   sudo nano /etc/dpkg-build-pg/config.yaml
+   ```
+
+2. Restart the service:
+   ```bash
+   sudo systemctl restart dpkg-build-pg
+   ```
+
+3. Verify the changes:
+   ```bash
+   curl http://localhost:8080
+   ```
+
+**Note:** Your changes to the config file will be preserved during package upgrades.
 
 ## Troubleshooting
 

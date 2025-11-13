@@ -10,5 +10,6 @@ Package: dpkg-build-pg
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Simple HTTP server built with Go
- A simple HTTP server application that responds with a string message.
- This package includes the server binary and a systemd service unit.
+ A simple HTTP server application that responds with a configurable message.
+ This package includes the server binary, a systemd service unit, and a
+ configuration file at /etc/dpkg-build-pg/config.yaml.

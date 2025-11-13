@@ -10,6 +10,7 @@ override_dh_auto_build:
 override_dh_auto_install:
 	install -D -m 0755 dpkg-build-pg debian/dpkg-build-pg/usr/bin/dpkg-build-pg
 	install -D -m 0644 debian/dpkg-build-pg.service debian/dpkg-build-pg/usr/lib/systemd/system/dpkg-build-pg.service
+	install -D -m 0644 config.yaml debian/dpkg-build-pg/etc/dpkg-build-pg/config.yaml
 
 override_dh_auto_test:
 	# Skip tests for now

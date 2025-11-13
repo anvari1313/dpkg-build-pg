@@ -1,0 +1,10 @@
+# Configuration file for dpkg-build-pg HTTP server
+
+server:
+  # Port to listen on
+  port: 8080
+  # Host to bind to (use 0.0.0.0 for all interfaces)
+  host: "0.0.0.0"
+
+# Message to respond with
+message: "Hello from dpkg-build-pg server!"

@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Go project for building Debian packages (dpkg) for PostgreSQL. The project uses Go 1.25.
+This is a simple HTTP server written in Go that can be packaged as a Debian package (.deb).
+The server reads its configuration from a YAML file and responds with a configurable message.
+The project demonstrates how to package Go applications for Debian-based systems.
 
 ## Development Commands
 
@@ -62,4 +64,30 @@ go vet ./...
 
 ## Architecture
 
-This project is in its initial phase. As the codebase grows, this section will be updated with architectural details about how the Debian package building system works.
+### Application Structure
+
+- **main.go**: HTTP server that reads configuration and serves a single endpoint
+- **config.yaml**: Configuration file with server settings and response message
+- **debian/**: Debian packaging files for creating .deb packages
+- **.github/workflows/**: GitHub Actions for automated builds and releases
+
+### Configuration
+
+The application looks for configuration in these locations (in order):
+1. `/etc/dpkg-build-pg/config.yaml` (production)
+2. `./config.yaml` (development)
+
+Configuration format:
+```yaml
+server:
+  port: 8080
+  host: "0.0.0.0"
+message: "Your message here"
+```
+
+### Package Structure
+
+When installed via .deb package:
+- Binary: `/usr/bin/dpkg-build-pg`
+- Config: `/etc/dpkg-build-pg/config.yaml`
+- Service: `/usr/lib/systemd/system/dpkg-build-pg.service`
